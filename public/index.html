@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color:antiquewhite;
+        }
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            background-color: rgba(190, 177, 161, 0.758);
+         align-items: center;
+        text-align: center;
+        }
+        .gallery img {
+            max-width: 200px;
+            max-height: 200px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Gallery</h1>
+    <div class="gallery" id="gallery"></div>
+
+    <script>
+        async function fetchImages() {
+            try {
+                const response = await fetch('/images'); // Fetch images from the server
+                const images = await response.json(); // Parse JSON response
+                
+                const gallery = document.getElementById('gallery');
+                gallery.innerHTML = ''; // Clear the gallery
+                
+                images.forEach(image => {
+                    const imgElement = document.createElement('img');
+                    imgElement.src = image.imageLink; // Set image source
+                    imgElement.alt = 'Image'; // Set alt text
+                    gallery.appendChild(imgElement);
+                });
+            } catch (err) {
+                console.error('Error fetching images:', err);
+            }
+        }
+
+        // Load images when the page loads
+        window.onload = fetchImages;
+    </script>
+</body>
+</html>
