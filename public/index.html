@@ -39,6 +39,7 @@
             max-height: 200px;
             border: 2px solid #ccc;
             border-radius: 5px;
+            cursor: pointer;
         }
 
         /* Menu bar styling */
@@ -71,11 +72,23 @@
         .menu-bar a {
             text-decoration: none;
         }
+
+        /* Search bar styling */
+        .search-bar {
+            margin: 20px;
+            padding: 10px;
+            width: 80%;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
     <div class="gallery-container">
         <h1>Image Gallery</h1>
+        <!-- Search bar for searching images by name -->
+        <input type="text" id="searchBar" class="search-bar" placeholder="Search by image name..." oninput="searchImages()">
         <div class="gallery" id="gallery"></div>
     </div>
     <div class="menu-bar">
@@ -83,23 +96,112 @@
     </div>
 
     <script>
+        let allImages = [];
+
         async function fetchImages() {
             try {
                 const response = await fetch('/images'); // Fetch images from the server
                 const images = await response.json(); // Parse JSON response
                 
-                const gallery = document.getElementById('gallery');
-                gallery.innerHTML = ''; // Clear the gallery
+                console.log("Fetched images:", images); // Debugging line
                 
-                images.forEach(image => {
-                    const imgElement = document.createElement('img');
-                    imgElement.src = image.imageLink; // Set image source
-                    imgElement.alt = 'Image'; // Set alt text
-                    gallery.appendChild(imgElement);
-                });
+                allImages = images; // Store all images for search functionality
+                displayImages(images);
             } catch (err) {
                 console.error('Error fetching images:', err);
             }
+        }
+
+        function displayImages(images) {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = ''; // Clear the gallery
+            
+            images.forEach(image => {
+                const imgElement = document.createElement('img');
+                imgElement.src = image.imageLink; // Set image source
+                imgElement.alt = image.title || 'Image'; // Set alt text
+
+                // Add click event to open image in a new tab with details and comments
+                imgElement.addEventListener('click', () => {
+                    const newTab = window.open('', '_blank');
+                    newTab.document.write(`
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>${image.title || 'Image Details'}</title>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                    background-color: #f8f9fa;
+                                    margin: 0;
+                                    padding: 20px;
+                                }
+                                img {
+                                    max-width: 90%;
+                                    max-height: 80vh;
+                                    border: 2px solid #ccc;
+                                    border-radius: 5px;
+                                }
+                                .details {
+                                    margin-top: 20px;
+                                    text-align: center;
+                                }
+                                .comments {
+                                    margin-top: 20px;
+                                    width: 80%;
+                                    background: #fff;
+                                    border: 1px solid #ccc;
+                                    border-radius: 5px;
+                                    padding: 10px;
+                                }
+                                .comments h3 {
+                                    margin-top: 0;
+                                }
+                                .comments p {
+                                    margin: 5px 0;
+                                    padding: 5px;
+                                    border-bottom: 1px solid #ddd;
+                                }
+                                .comments p:last-child {
+                                    border-bottom: none;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <img src="${image.imageLink}" alt="${image.title || 'Image'}">
+                            <div class="details">
+                                <h2>${image.title || 'No Title Available'}</h2>
+                                <p>${image.description || 'No Description Available'}</p>
+                            </div>
+                            <div class="comments">
+                                <h3>Artist Comments</h3>
+                                ${image.comments && image.comments.length > 0
+                                    ? image.comments.map(comment => `<p>${comment}</p>`).join('')
+                                    : '<p>No comments available</p>'
+                                }
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                });
+
+                gallery.appendChild(imgElement);
+            });
+        }
+
+        function searchImages() {
+            const searchQuery = document.getElementById('searchBar').value.toLowerCase();
+            console.log("Search query:", searchQuery); // Debugging line
+            
+            const filteredImages = allImages.filter(image => 
+                image.title && image.title.toLowerCase().includes(searchQuery)
+            );
+            displayImages(filteredImages);
         }
 
         // Load images when the page loads
@@ -107,3 +209,4 @@
     </script>
 </body>
 </html>
+
