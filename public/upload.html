@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload an Image</title>
+    <link rel="stylesheet" href="styles/upload.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Upload an Image</h1>
+        <form action="/upload" method="POST" class="upload-form">
+            <label for="imageLink">Image Link</label>
+            <input type="text" id="imageLink" name="imageLink" placeholder="Enter image URL" required />
+
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" placeholder="Enter image title" required />
+
+            <label for="description">Description</label>
+            <textarea id="description" name="description" placeholder="Enter image description" rows="4" required></textarea>
+
+            <label for="comments">Comments (optional, comma-separated)</label>
+            <textarea id="comments" name="comments" placeholder="Add some comments about this image" rows="4"></textarea>
+
+            <button type="submit">Upload</button>
+        </form>
+    </div>
+</body>
+</html>

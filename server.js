@@ -4,9 +4,10 @@ const path = require("path");
 
 const app = express();
 
-// Middleware
+// Middleware for parsing JSON and form data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
 
 // MongoDB connection
 mongoose.connect("mongodb://localhost:27017/imageDB", {
@@ -16,214 +17,118 @@ mongoose.connect("mongodb://localhost:27017/imageDB", {
 
 // Define schemas and models
 const imageSchema = new mongoose.Schema({
-    imageLink: String,
-});
-
-const requestSchema = new mongoose.Schema({
-    email: String,
-    requesterName: String,
-    requestType: String,
-    message: String,
-    dateSubmitted: { type: Date, default: Date.now }
+    imageLink: { type: String, required: true },
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    comments: { type: [String], default: [] },
 });
 
 const Image = mongoose.model("Image", imageSchema);
-const Request = mongoose.model("Request", requestSchema);
 
-// Serve login page
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/login.html'));
+// Route to serve index.html (Gallery)
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
-// Handle login submission and redirect
-app.post('/login', (req, res) => {
-    const { role } = req.body;
-
-    // Validate the role
-    if (!['admin', 'user', 'artist'].includes(role)) {
-        return res.status(400).send('Invalid role');
-    }
-
-    // Redirect to the corresponding page
-    switch (role) {
-        case 'admin':
-            return res.redirect('/admin');
-        case 'user':
-            return res.redirect('/user');
-        case 'artist':
-            return res.redirect('/artist');
-        default:
-            res.status(400).send('Invalid role');
-    }
+// Route to serve upload.html
+app.get("/upload", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/upload.html"));
 });
 
-// Serve admin, user, and artist pages
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/admin.html'));
+// Route to serve artist.html
+app.get("/artist", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/artist.html"));
 });
 
-app.get('/user', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/user.html'));
+// Route to serve admin.html
+app.get("/admin", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/admin.html"));
 });
 
-app.get('/artist', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/artist.html'));
+// Route to serve user.html
+app.get("/user", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/user.html"));
 });
 
-// Serve request and upload pages
-app.get('/request', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/request.html'));
-});
+// Route to handle login with role-based redirection
+app.get("/login", (req, res) => {
+    const role = req.query.role;
 
-app.get('/upload', (req, res) => {
-    res.sendFile(path.join(__dirname, 'upload.html'));
-});
-
-// Fetch all requests (for admin)
-app.get('/requests', async (req, res) => {
-    try {
-        const requests = await Request.find();
-        res.json(requests);
-    } catch (err) {
-        res.status(500).send('Error fetching requests');
+    // Redirect based on the role
+    if (role === "admin") {
+        res.redirect("/admin"); // Admin dashboard
+    } else if (role === "user") {
+        res.redirect("/user"); // User dashboard
+    } else if (role === "artist") {
+        res.redirect("/artist"); // Artist dashboard
+    } else {
+        res.status(400).send("Invalid role. Please select a valid role.");
     }
 });
 
-// Delete a specific request (for admin)
-app.delete('/requests/:id', async (req, res) => {
-    try {
-        await Request.findByIdAndDelete(req.params.id);
-        res.status(200).send('Request deleted');
-    } catch (err) {
-        res.status(500).send('Error deleting request');
-    }
-});
-
-// Handle request submissions
-app.post("/submit-request", async (req, res) => {
-    const { artistName, requesterName, requestType, message } = req.body;
-
-    // Validate the input fields
-    if (!artistName || !requesterName || !requestType || !message) {
-        return res.status(400).send("All fields are required");
-    }
-
-    try {
-        // Create a new request in the database
-        await Request.create({
-            artistName,
-            requesterName,
-            requestType,
-            message
-        });
-
-        // Send a styled success response
-        res.send(`
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Request Submitted</title>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        text-align: center;
-                        background-color: antiquewhite;
-                        padding: 20px;
-                        margin: 0;
-                    }
-
-                    h1 {
-                        color: #4CAF50;
-                        margin-top: 50px;
-                    }
-
-                    p {
-                        color: #333;
-                        font-size: 18px;
-                        margin: 20px 0;
-                    }
-
-                    button {
-                        padding: 10px 20px;
-                        font-size: 16px;
-                        border: none;
-                        border-radius: 4px;
-                        background-color: #4CAF50;
-                        color: white;
-                        cursor: pointer;
-                        margin-top: 20px;
-                    }
-
-                    button:hover {
-                        background-color: #45a049;
-                    }
-                </style>
-            </head>
-            <body>
-                <h1>Request Submitted Successfully!</h1>
-                <p>Your request has been received. Thank you for submitting.</p>
-                <button onclick="window.location.href='/user'">Back to User Dashboard</button>
-            </body>
-            </html>
-        `);
-    } catch (err) {
-        res.status(500).send("Error submitting request: " + err.message);
-    }
-});
-
-
-// Handle image uploads
+// Route to handle image uploads
 app.post("/upload", async (req, res) => {
-    const { imageLink } = req.body;
+    const { imageLink, title, description, comments } = req.body;
 
-    // Validate the input field
-    if (!imageLink) {
-        return res.status(400).send("Image link is required");
+    if (!imageLink || !title || !description) {
+        return res.status(400).send("Image link, title, and description are required.");
     }
 
     try {
-        // Save the image to the database
-        await Image.create({ imageLink });
+        const commentArray = comments ? comments.split(",").map(comment => comment.trim()) : [];
+        await Image.create({ imageLink, title, description, comments: commentArray });
 
-        // Send a styled success response
         res.send(`
             <!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Image Uploaded</title>
+                <title>Image Uploaded Successfully</title>
                 <style>
                     body {
-                        font-family: Arial, sans-serif;
-                        text-align: center;
-                        background-color: antiquewhite;
-                        padding: 20px;
+                        font-family: 'Arial', sans-serif;
+                        background: linear-gradient(to right, #92a8d1, #f7cac9);
                         margin: 0;
+                        padding: 0;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        color: #333;
+                    }
+
+                    .container {
+                        background-color: #fff;
+                        padding: 30px 40px;
+                        border-radius: 10px;
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                        text-align: center;
+                        max-width: 500px;
+                        width: 90%;
                     }
 
                     h1 {
+                        font-size: 28px;
                         color: #4CAF50;
-                        margin-top: 50px;
+                        margin-bottom: 20px;
                     }
 
                     p {
-                        color: #333;
                         font-size: 18px;
-                        margin: 20px 0;
+                        margin: 10px 0 20px;
+                        color: #555;
                     }
 
                     button {
-                        padding: 10px 20px;
-                        font-size: 16px;
-                        border: none;
-                        border-radius: 4px;
                         background-color: #4CAF50;
                         color: white;
+                        padding: 12px 20px;
+                        font-size: 16px;
+                        border: none;
+                        border-radius: 5px;
                         cursor: pointer;
-                        margin-top: 20px;
+                        transition: background-color 0.3s ease;
                     }
 
                     button:hover {
@@ -232,9 +137,11 @@ app.post("/upload", async (req, res) => {
                 </style>
             </head>
             <body>
-                <h1>Image Uploaded Successfully!</h1>
-                <p>Your image has been successfully uploaded. Thank you for your contribution!</p>
-                <button onclick="window.location.href='/artist'">Back to Artist Dashboard</button>
+                <div class="container">
+                    <h1>Image Uploaded Successfully!</h1>
+                    <p>Your image has been uploaded with the provided details.</p>
+                    <button onclick="window.location.href='/artist'">Back to Artist Dashboard</button>
+                </div>
             </body>
             </html>
         `);
@@ -243,9 +150,8 @@ app.post("/upload", async (req, res) => {
     }
 });
 
-
-// Fetch all images
-app.get('/images', async (req, res) => {
+// Route to fetch all images
+app.get("/images", async (req, res) => {
     try {
         const images = await Image.find();
         res.json(images);
@@ -254,9 +160,41 @@ app.get('/images', async (req, res) => {
     }
 });
 
-// Serve the index page
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public/index.html"));
+// Route to edit an image
+app.put("/images/:id", async (req, res) => {
+    const { title, description, comments } = req.body;
+
+    try {
+        const image = await Image.findById(req.params.id);
+
+        if (!image) {
+            return res.status(404).send("Image not found");
+        }
+
+        image.title = title || image.title;
+        image.description = description || image.description;
+        image.comments = comments ? comments.split(",").map(c => c.trim()) : image.comments;
+
+        await image.save();
+        res.status(200).send("Image updated successfully");
+    } catch (err) {
+        res.status(500).send("Error updating image: " + err.message);
+    }
+});
+
+// Route to delete an image
+app.delete("/images/:id", async (req, res) => {
+    try {
+        const image = await Image.findByIdAndDelete(req.params.id);
+
+        if (!image) {
+            return res.status(404).send("Image not found");
+        }
+
+        res.status(200).send("Image deleted successfully");
+    } catch (err) {
+        res.status(500).send("Error deleting image: " + err.message);
+    }
 });
 
 // Start the server
