@@ -3,120 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Gallery</title>
+    <title>Artistic Image Gallery</title>
     <link rel="stylesheet" href="styles/gallery.css">
-    <style>
-        /* Login dropdown styling */
-        .login-container {
-            position: relative;
-            display: inline-block;
-            margin-right: 20px;
-        }
-
-        .login-button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .login-button:hover {
-            background-color: #45a049;
-        }
-
-        .login-menu {
-            display: none;
-            position: absolute;
-            background-color: white;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
-            z-index: 1;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .login-menu button {
-            width: 100%;
-            padding: 10px;
-            font-size: 14px;
-            border: none;
-            background: none;
-            text-align: left;
-            cursor: pointer;
-        }
-
-        .login-menu button:hover {
-            background-color: #f1f1f1;
-        }
-
-        .login-container:hover .login-menu {
-            display: block;
-        }
-    </style>
 </head>
 <body>
-    <header class="gallery-header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h1>Image Gallery</h1>
-            <div class="login-container">
-                <button class="login-button">Login</button>
-                <div class="login-menu">
-                    <button onclick="window.location.href='/login?role=admin'">Admin</button>
-                    <button onclick="window.location.href='/login?role=user'">User</button>
-                    <button onclick="window.location.href='/login?role=artist'">Artist</button>
-                </div>
-            </div>
-        </div>
-        <input type="text" id="searchBar" placeholder="Search images by title..." oninput="searchImages()">
-    </header>
-    <section class="gallery-content">
-        <div class="gallery-grid" id="gallery-grid">
-            <!-- Dynamic content populated via JavaScript -->
-        </div>
-    </section>
-    <script>
-        let allImages = [];
+    <div class="menu-bar">
+        <button onclick="window.location.href='/login'">Login</button>
+    </div>
+    <div class="gallery-container">
+        <h1>Welcome to the Artistic Image Gallery</h1>
+        <p class="subtitle">Explore the finest collection of uploaded images from artists worldwide.</p>
+        <div class="gallery" id="gallery"></div>
+    </div>
 
-        // Fetch images from the server
+    <script>
         async function fetchImages() {
             try {
-                const response = await fetch('/images');
-                allImages = await response.json();
-                displayImages(allImages);
+                const response = await fetch('/images'); // Fetch images from the server
+                const images = await response.json(); // Parse JSON response
+
+                const gallery = document.getElementById('gallery');
+                gallery.innerHTML = ''; // Clear the gallery
+
+                images.forEach(image => {
+                    const imageDiv = document.createElement('div');
+                    imageDiv.classList.add('image-card');
+
+                    imageDiv.innerHTML = `
+                        <div class="image-wrapper">
+                            <img src="${image.imageLink}" alt="${image.title}">
+                        </div>
+                        <div class="image-details">
+                            <h3>${image.title}</h3>
+                            <p>${image.description}</p>
+                            <p>Artist: ${image.artistName || 'Unknown'}</p>
+                            <p><span class="views" id="views-${image._id}">${image.views}</span> views</p>
+                        </div>
+                    `;
+
+                    imageDiv.querySelector('img').addEventListener('click', (event) => {
+                        event.preventDefault(); // Prevent default behavior
+                        openImageDetails(image); // Open the image in a new tab
+                        incrementViewCount(image._id); // Increment view count in the background
+                    });
+
+                    gallery.appendChild(imageDiv);
+                });
             } catch (err) {
                 console.error('Error fetching images:', err);
             }
         }
 
-        // Display images in the gallery
-        function displayImages(images) {
-            const grid = document.getElementById('gallery-grid');
-            grid.innerHTML = ''; // Clear existing content
-
-            if (images.length === 0) {
-                grid.innerHTML = '<p>No images found.</p>';
-                return;
+        async function incrementViewCount(imageId) {
+            try {
+                await fetch(`/images/${imageId}/view`, { method: 'POST' });
+                const viewCountElement = document.getElementById(`views-${imageId}`);
+                viewCountElement.textContent = parseInt(viewCountElement.textContent) + 1;
+            } catch (err) {
+                console.error('Error incrementing view count:', err);
             }
-
-            images.forEach(image => {
-                const card = document.createElement('div');
-                card.classList.add('gallery-card');
-                card.innerHTML = `
-                    <img src="${image.imageLink}" alt="${image.title || 'Image'}">
-                    <div class="gallery-details">
-                        <p>${image.title || 'Untitled'}</p>
-                    </div>
-                `;
-                // Add click event to open image details in a new window
-                card.addEventListener('click', () => openImageDetails(image));
-                grid.appendChild(card);
-            });
         }
 
-        // Open a new window with image details
         function openImageDetails(image) {
             const newTab = window.open('', '_blank');
             newTab.document.write(`
@@ -125,77 +72,42 @@
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>${image.title || 'Image Details'}</title>
+                    <title>${image.title}</title>
                     <style>
                         body {
-                            font-family: 'Arial', sans-serif;
-                            background-color: #f5f5f5;
-                            margin: 0;
-                            padding: 20px;
+                            font-family: Arial, sans-serif;
                             text-align: center;
-                            color: #333;
+                            padding: 20px;
+                            background: linear-gradient(to right, #ffefba, #ffffff);
                         }
                         img {
-                            max-width: 90%;
+                            max-width: 100%;
                             height: auto;
-                            border: 2px solid #ddd;
-                            border-radius: 5px;
-                            margin-bottom: 20px;
+                            border-radius: 10px;
                         }
-                        .details {
-                            font-size: 18px;
-                            margin-bottom: 20px;
+                        h1 {
+                            margin: 10px 0;
+                            color: #4CAF50;
                         }
-                        .comments {
-                            text-align: left;
-                            max-width: 600px;
-                            margin: 0 auto;
-                        }
-                        .comments h3 {
-                            margin-top: 20px;
-                        }
-                        .comments ul {
-                            padding: 0;
-                            list-style: none;
-                        }
-                        .comments li {
-                            padding: 5px 0;
-                            border-bottom: 1px solid #ddd;
+                        p {
+                            color: #555;
+                            font-size: 16px;
                         }
                     </style>
                 </head>
                 <body>
-                    <img src="${image.imageLink}" alt="${image.title || 'Image'}">
-                    <div class="details">
-                        <h1>${image.title || 'Untitled'}</h1>
-                        <p>${image.description || 'No description available.'}</p>
-                    </div>
-                    <div class="comments">
-                        <h3>Comments</h3>
-                        <ul>
-                            ${
-                                image.comments && image.comments.length > 0
-                                    ? image.comments.map(comment => `<li>${comment}</li>`).join('')
-                                    : '<li>No comments available.</li>'
-                            }
-                        </ul>
-                    </div>
+                    <img src="${image.imageLink}" alt="${image.title}">
+                    <h1>${image.title}</h1>
+                    <p>${image.description}</p>
+                    <p>Artist: ${image.artistName || 'Unknown'}</p>
                 </body>
                 </html>
             `);
         }
 
-        // Filter images by search query
-        function searchImages() {
-            const query = document.getElementById('searchBar').value.toLowerCase();
-            const filtered = allImages.filter(image =>
-                image.title?.toLowerCase().includes(query)
-            );
-            displayImages(filtered);
-        }
-
-        // Load images when the page loads
+        // Load images on page load
         window.onload = fetchImages;
     </script>
 </body>
 </html>
+

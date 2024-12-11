@@ -1,0 +1,50 @@
+body {
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(to right, #92a8d1, #f7cac9);
+  margin: 0;
+  padding: 0;
+}
+
+.admin-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 20px auto;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+h1, h2 {
+  text-align: center;
+  color: #4CAF50;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+th, td {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+th {
+  background-color: #4CAF50;
+  color: white;
+}
+
+button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: #f44336;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #d32f2f;
+}

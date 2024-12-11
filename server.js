@@ -21,50 +21,159 @@ const imageSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String, required: true },
     comments: { type: [String], default: [] },
+    views: { type: Number, default: 0 }, // Track the number of views
+});
+
+const requestSchema = new mongoose.Schema({
+    artistName: { type: String, required: true },
+    requesterName: { type: String, required: true },
+    requestType: { type: String, required: true },
+    message: { type: String, required: true },
+    dateSubmitted: { type: Date, default: Date.now },
 });
 
 const Image = mongoose.model("Image", imageSchema);
+const Request = mongoose.model("Request", requestSchema);
 
 // Route to serve index.html (Gallery)
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
-// Route to serve upload.html
+// Request route
+app.get("/request", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/request.html"));
+});
+
+// Request submission
+app.post("/submit-request", async (req, res) => {
+    const { artistName, requesterName, requestType, message } = req.body;
+
+    if (!artistName || !requesterName || !requestType || !message) {
+        return res.status(400).send("All fields are required.");
+    }
+
+    try {
+        const newRequest = new Request({
+            artistName,
+            requesterName,
+            requestType,
+            message,
+        });
+
+        await newRequest.save();
+
+        res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Request Submitted</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                        background-color: #f5f5f5;
+                        padding: 50px;
+                    }
+
+                    h1 {
+                        color: #4CAF50;
+                    }
+
+                    p {
+                        font-size: 18px;
+                        color: #333;
+                    }
+
+                    button {
+                        padding: 10px 20px;
+                        font-size: 16px;
+                        border: none;
+                        border-radius: 5px;
+                        background-color: #4CAF50;
+                        color: white;
+                        cursor: pointer;
+                    }
+
+                    button:hover {
+                        background-color: #45a049;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Request Submitted Successfully!</h1>
+                <p>Your request has been sent to the artist.</p>
+                <button onclick="window.location.href='/user'">Back to Dashboard</button>
+            </body>
+            </html>
+        `);
+    } catch (err) {
+        res.status(500).send("Error submitting request: " + err.message);
+    }
+});
+
+// Route to fetch all requests
+app.get("/requests", async (req, res) => {
+    try {
+        const requests = await Request.find();
+        res.json(requests);
+    } catch (err) {
+        res.status(500).send("Error fetching requests: " + err.message);
+    }
+});
+
+// Route to fetch all images
+app.get("/images", async (req, res) => {
+    try {
+        const images = await Image.find();
+        res.json(images);
+    } catch (err) {
+        res.status(500).send("Error fetching images: " + err.message);
+    }
+});
+
+// Route to increment the view count for an image
+app.post("/images/:id/view", async (req, res) => {
+    try {
+        const image = await Image.findById(req.params.id);
+
+        if (!image) {
+            return res.status(404).send("Image not found");
+        }
+
+        image.views += 1; // Increment the views count
+        await image.save();
+
+        res.status(200).send("View count incremented");
+    } catch (err) {
+        res.status(500).send("Error incrementing view count: " + err.message);
+    }
+});
+
+
+// Other routes (upload, artist, admin, user, login, etc.)
 app.get("/upload", (req, res) => {
     res.sendFile(path.join(__dirname, "public/upload.html"));
 });
 
-// Route to serve artist.html
 app.get("/artist", (req, res) => {
     res.sendFile(path.join(__dirname, "public/artist.html"));
 });
 
-// Route to serve admin.html
 app.get("/admin", (req, res) => {
     res.sendFile(path.join(__dirname, "public/admin.html"));
 });
 
-// Route to serve user.html
 app.get("/user", (req, res) => {
     res.sendFile(path.join(__dirname, "public/user.html"));
 });
 
-// Route to handle login with role-based redirection
 app.get("/login", (req, res) => {
-    const role = req.query.role;
-
-    // Redirect based on the role
-    if (role === "admin") {
-        res.redirect("/admin"); // Admin dashboard
-    } else if (role === "user") {
-        res.redirect("/user"); // User dashboard
-    } else if (role === "artist") {
-        res.redirect("/artist"); // Artist dashboard
-    } else {
-        res.status(400).send("Invalid role. Please select a valid role.");
-    }
+    res.sendFile(path.join(__dirname, "public/login.html"));
 });
+
 
 // Route to handle image uploads
 app.post("/upload", async (req, res) => {
@@ -75,7 +184,9 @@ app.post("/upload", async (req, res) => {
     }
 
     try {
-        const commentArray = comments ? comments.split(",").map(comment => comment.trim()) : [];
+        const commentArray = comments
+            ? comments.split(",").map((comment) => comment.trim())
+            : [];
         await Image.create({ imageLink, title, description, comments: commentArray });
 
         res.send(`
@@ -147,53 +258,6 @@ app.post("/upload", async (req, res) => {
         `);
     } catch (err) {
         res.status(500).send("Error uploading image: " + err.message);
-    }
-});
-
-// Route to fetch all images
-app.get("/images", async (req, res) => {
-    try {
-        const images = await Image.find();
-        res.json(images);
-    } catch (err) {
-        res.status(500).send("Error fetching images: " + err.message);
-    }
-});
-
-// Route to edit an image
-app.put("/images/:id", async (req, res) => {
-    const { title, description, comments } = req.body;
-
-    try {
-        const image = await Image.findById(req.params.id);
-
-        if (!image) {
-            return res.status(404).send("Image not found");
-        }
-
-        image.title = title || image.title;
-        image.description = description || image.description;
-        image.comments = comments ? comments.split(",").map(c => c.trim()) : image.comments;
-
-        await image.save();
-        res.status(200).send("Image updated successfully");
-    } catch (err) {
-        res.status(500).send("Error updating image: " + err.message);
-    }
-});
-
-// Route to delete an image
-app.delete("/images/:id", async (req, res) => {
-    try {
-        const image = await Image.findByIdAndDelete(req.params.id);
-
-        if (!image) {
-            return res.status(404).send("Image not found");
-        }
-
-        res.status(200).send("Image deleted successfully");
-    } catch (err) {
-        res.status(500).send("Error deleting image: " + err.message);
     }
 });
 

@@ -3,54 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Request Form</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            justify-content: center;
-        align-items: center;
-        text-align: center;
-        background-color:antiquewhite;
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            width: 300px;
-            justify-content: center;
-            background-color: rgba(190, 177, 161, 0.758);
-            align-items: center;
-             text-align: center;
-        }
-
-        label {
-            margin-bottom: 5px;
-        }
-
-        input, textarea, button {
-            margin-bottom: 15px;
-            padding: 10px;
-            font-size: 16px;
-        }
-    </style>
+    <title>Submit a Request</title>
+    <link rel="stylesheet" href="styles/request.css">
 </head>
 <body>
-    <h1>Submit a Request to the Artist</h1>
-    <form action="/submit-request" method="POST">
-        <label for="Email">Artist Name</label>
-        <input type="text" id="artistName" name="artistName" required>
+    <div class="request-container">
+        <h1>Submit a Request</h1>
+        <form action="/submit-request" method="POST">
+            <label for="artistName">Artist Name</label>
+            <input type="text" id="artistName" name="artistName" placeholder="Enter artist name" required>
 
-        <label for="requesterName">Your Name</label>
-        <input type="text" id="requesterName" name="requesterName" required>
+            <label for="requesterName">Your Name</label>
+            <input type="text" id="requesterName" name="requesterName" placeholder="Enter your name" required>
 
-        <label for="requestType">Request Type</label>
-        <input type="text" id="requestType" name="requestType" required>
+            <label for="requestType">Request Type</label>
+            <input type="text" id="requestType" name="requestType" placeholder="Enter request type" required>
 
-        <label for="message">Additional Message</label>
-        <textarea id="message" name="message" rows="4" required></textarea>
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="4" placeholder="Write your message" required></textarea>
 
-        <button type="submit">Submit Request</button>
-    </form>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
 </body>
 </html>
 

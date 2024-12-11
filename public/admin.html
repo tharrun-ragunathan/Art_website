@@ -4,98 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: antiquewhite;
-            padding: 20px;
-        }
-
-        h1 {
-            color: #333;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px auto;
-        }
-
-        th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: center;
-        }
-
-        th {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 14px;
-            border: none;
-            border-radius: 4px;
-            background-color: #f44336;
-            color: white;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #d32f2f;
-        }
-    </style>
+    <link rel="stylesheet" href="styles/admin.css">
 </head>
 <body>
-    <h1>Admin Dashboard</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Requester Name</th>
-                <th>Request Type</th>
-                <th>Message</th>
-                <th>Date Submitted</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="requests-table">
-            <!-- Requests will be dynamically populated here -->
-        </tbody>
-    </table>
-
+    <div class="admin-container">
+        <h1>Admin Dashboard</h1>
+        <h2>Submitted Requests</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Artist Name</th>
+                    <th>Requester Name</th>
+                    <th>Request Type</th>
+                    <th>Message</th>
+                    <th>Date Submitted</th>
+                </tr>
+            </thead>
+            <tbody id="requests-table">
+                <!-- Requests will be dynamically populated -->
+            </tbody>
+        </table>
+    </div>
     <script>
         async function fetchRequests() {
             try {
-                const response = await fetch('/requests'); // Backend route to fetch requests
+                const response = await fetch('/requests');
                 const requests = await response.json();
-                const tableBody = document.getElementById('requests-table');
-                tableBody.innerHTML = ''; // Clear table
+                const table = document.getElementById('requests-table');
+
+                table.innerHTML = '';
 
                 requests.forEach(request => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
+                        <td>${request.artistName}</td>
                         <td>${request.requesterName}</td>
                         <td>${request.requestType}</td>
                         <td>${request.message}</td>
                         <td>${new Date(request.dateSubmitted).toLocaleString()}</td>
-                        <td><button onclick="deleteRequest('${request._id}')">Delete</button></td>
                     `;
-                    tableBody.appendChild(row);
+                    table.appendChild(row);
                 });
             } catch (err) {
                 console.error('Error fetching requests:', err);
-            }
-        }
-
-        async function deleteRequest(id) {
-            try {
-                await fetch(`/requests/${id}`, { method: 'DELETE' });
-                alert('Request deleted successfully');
-                fetchRequests(); // Reload the requests
-            } catch (err) {
-                console.error('Error deleting request:', err);
             }
         }
 
@@ -104,4 +55,3 @@
     </script>
 </body>
 </html>
-    
